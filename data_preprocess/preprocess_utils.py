@@ -5,20 +5,48 @@
 # @Project : myutils
 
 '''
-    自定义数据预处理：
-        1.读取文件:csv、feather、pickle
+    自定义数据预处理，分为多个部分：
+    a.一个完整的数据分析流程，用于对表格数据进行简要的探索
+    b.模型优化
+    c.
 
 '''
 import random
 
+# 模型保存和加载库
+import pickle
+
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
 from sklearn import (
     ensemble,
     preprocessing,
     tree,
     model_selection,
-    impute,
+)
+
+from sklearn.metrics import (
+    auc,
+    confusion_matrix,
+    roc_auc_score,
+    roc_curve,
+    precision_score
+)
+
+from sklearn.impute import (
+    SimpleImputer,
+    IterativeImputer,
+)
+
+from yellowbrick.classifier import (
+    ConfusionMatrix,
+    ROCAUC,
+)
+
+from yellowbrick.model_selection import (
+    LearningCurve,
 )
 
 # 导入不同的模型库
@@ -42,11 +70,8 @@ from sklearn.ensemble import RandomForestClassifier
 import xgboost
 
 
-# 9.用stacking整合不同分类器
-# from mlxtend.classifier import StackingClassifier
-
-
-# 1_读取三种类型的数据
+# a.一个完整的数据分析过程，简要的对数据进行初步的分析与处理
+# 1_读取三种类型的数据（csv、feather、pickle）
 def getData(path, type='csv'):
     df = []
     if type == 'csv':
@@ -97,25 +122,35 @@ def extract_label(df, label):
 
 
 # 6_划分数据集为训练集和测试集
-def train_test(X, y,test_size):
+def train_test(X, y, test_size):
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=test_size, random_state=42)
     return X_train, X_test, y_train, y_test
 
 
-# 7_缺失值填充（数据集，特征，填充方法）
-def deal_none(df, feather, fill_method='med'):
-    num_cols = [
-        feather,
-    ]
+# 7_缺失值填充（数据集，填充方法，指定特征）
+def deal_none(df, fill_method='med',feather=None,fvalue=-1):
+
+    # 如果没有指定要填充的特征，挑选出数据中数值型的特征进行缺失值填充
+    if feather is  None:
+        num_cols = df.select_dtypes(include='number').columns
+    else:
+        num_cols = list(feather)
+
     # 拟合法填充
     if fill_method == 'fit':
-        imputer = impute.IterativeImputer()
-        imputed = imputer.fit_transform(df[num_cols])
+        im = IterativeImputer()
+        imputed = im.fit_transform(df[num_cols])
         df.loc[:, num_cols] = imputed
-    # 中位数法填充
-    elif fill_method == 'med':
-        meds = df.median()
-        df = df.fillna(meds)
+    # 插值法填充
+    else:
+        # 插值（默认使用均值，设置参数strategy='median'或'most_frequent使用中位数和最高频特征值，自定义常数值为'constant',fill_value=-1)
+        allowed_strategies = ["mean", "median", "most_frequent", "constant"]
+        if fill_method == 'constant':
+            im = SimpleImputer(strategy=fill_method,fill_value=fvalue)
+        else:
+            im = SimpleImputer(strategy=fill_method,)
+        imputed = im.fit_transform(df[num_cols])
+        df.loc[:, num_cols] = imputed
     return df
 
 
@@ -158,3 +193,145 @@ def multiModel(X_train, X_test, y_train, y_test):
             f"{s.mean():.3f} STD:  {s.std():.2f}"
         )
 
+
+# 10_模型评估，重要特征
+def modelAccess(model, X_train, X_test, y_train, y_test):
+    # 模型训练
+    model.fit(X_train, y_train.values.ravel())
+
+    # 模型评估
+    # 返回准确率
+    accuracy = model.score(X_test, y_test)
+    print('RF_accuracy：')
+    print(accuracy)
+    # 返回精确值
+    pre = precision_score(y_test, model.predict(X_test))
+    print('RF_precision：')
+    print(pre)
+    # 查看模型中的特征重要性(默认使用的是"gini",返回前10个重要特征）
+    print('特征重要性排序：')
+    for col, val in sorted(
+            zip(
+                X_train.columns,
+                model.feature_importances_,
+            ),
+            key=lambda x: x[1],
+            reverse=True,
+    )[:10]:
+        print(f"{col:10}{val:10.3f}")
+    # 返回训练好的模型
+    return model
+
+
+# 11_模型持久化（保存训练好的模型，需要的时候再使用）
+def saveModel(model, save=False, file='model.pickle'):
+    # 保存模型
+    if save == False:
+        pic = pickle.dumps(model)
+        print('模型保存完毕,返回变量...')
+        return pic
+    else:
+        with open(file, 'wb') as f:
+            pickle.dump(model, f)
+        print('模型保存至指定文件...')
+
+
+# 12_模型导入
+def importModel(from_file=False, pic=None, file=None):
+    # 加载模型
+    if from_file == False:
+        model = pickle.loads(pic)
+        print('模型导入成功...')
+        return model
+    else:
+        with open(file, 'rb') as f:
+            res = pickle.load(f)
+            return res
+
+
+# 13_模型预测
+def model_predict(model, X_test, y_test):
+    # 用加载的模型预测当前的数据
+    y_pred = model.predict(X_test)
+    roc = roc_auc_score(y_test, y_pred)
+    print('预测结果为：%f' % roc)
+
+
+# b.模型优化
+
+#  模型优化：网格搜索法调整模型训练参数
+def modelOpt(X_train, X_test, y_train, y_test):
+    # 初始化随机森林
+    rf4 = ensemble.RandomForestClassifier()
+    # 设置要调整的参数范围
+    params = {
+        "n_estimators": [15, 200],
+        "min_samples_leaf": [1, 0.1],
+        "random_state": [42],
+    }
+    # 使用网格搜索法设置参数
+    cv = model_selection.GridSearchCV(
+        rf4, params, n_jobs=-1).fit(X_train, y_train.values.ravel())
+
+    # 输出最佳参数值
+    print('最佳模型参数为：')
+    print(cv.best_params_)
+
+    rf5 = ensemble.RandomForestClassifier(
+        **{
+            "min_samples_leaf": 1,
+            "n_estimators": 200,
+            "random_state": 42
+        }
+    )
+    rf5.fit(X_train, y_train.values.ravel())
+    auc = rf5.score(X_test, y_test.values.ravel())
+    print('调参后的模型预测Auc为：')
+    print(auc)
+
+
+# c.绘制图表和曲线
+# 绘制混淆矩阵
+def plotMatrix(model, X_test, y_test):
+    # 取得预测标签
+    y_pred = model.predict(X_test)
+    # 用真实标签和预测标签得到混淆矩阵
+    cfs = confusion_matrix(y_test, y_pred)
+    print(cfs)
+
+    mapping = {0: 'Negative', 1: 'Positive'}
+    fig, ax = plt.subplots(figsize=(6, 6))
+    cm_viz = ConfusionMatrix(
+        model,
+        classes=['Negative', 'Positive'],
+        label_encoder=mapping,
+    )
+    cm_viz.score(X_test, y_test)
+    cm_viz.show()
+    # if save_name is not None:
+    #     fig.savefig(
+    #         save_name,
+    #         dpi=300,
+    #         bbox_inches='tight',
+    #     )
+
+
+# 绘制三种曲线：Roc曲线（预测性能），Learning曲线（显示训练数据的量是否足够支持模型）
+
+
+
+def plotLearning(model, X, y):
+    fig, ax = plt.subplots(figsize=(6, 4))
+    cv = model_selection.StratifiedKFold(12)
+    sizes = np.linspace(0.3, 1.0, 10)
+    lc_viz = LearningCurve(
+        model,
+        cv=cv,
+        train_sizes=sizes,
+        scoring='f1_weighted',
+        n_jobs=4,
+        ax=ax,
+    )
+    lc_viz.fit(X, y)
+    lc_viz.show()
+    # fig.savefig('images/mlpr_030.png')
