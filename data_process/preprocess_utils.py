@@ -25,6 +25,7 @@ from sklearn import (
     preprocessing,
     tree,
     model_selection,
+    feature_selection,
 )
 
 from sklearn.metrics import (
@@ -32,13 +33,15 @@ from sklearn.metrics import (
     confusion_matrix,
     roc_auc_score,
     roc_curve,
-    precision_score
+    precision_score,
+
 )
 
 from sklearn.impute import (
     SimpleImputer,
-    IterativeImputer,
 )
+
+from sklearn.experimental import enable_iterative_imputer
 
 from yellowbrick.classifier import (
     ConfusionMatrix,
@@ -48,6 +51,8 @@ from yellowbrick.classifier import (
 from yellowbrick.model_selection import (
     LearningCurve,
 )
+
+from yellowbrick.features import RFECV
 
 # 导入不同的模型库
 # 准备交叉验证
@@ -107,7 +112,7 @@ def del_feather(df, feather):
     return df
 
 
-# 4_类型转换
+# 4_类型转换（类别特征）
 def type_change(df):
     # 类别变量转为数值数值型(one-hot)
     df = pd.get_dummies(df, drop_first=True)
@@ -138,7 +143,7 @@ def deal_none(df, fill_method='med',feather=None,fvalue=-1):
 
     # 拟合法填充
     if fill_method == 'fit':
-        im = IterativeImputer()
+        im = enable_iterative_imputer.IterativeImputer()
         imputed = im.fit_transform(df[num_cols])
         df.loc[:, num_cols] = imputed
     # 插值法填充
@@ -154,7 +159,7 @@ def deal_none(df, fill_method='med',feather=None,fvalue=-1):
     return df
 
 
-# 8_数值数据归一化（划到0-1之间）
+# 8_数值数据归一化（数值特征划到0-1之间）
 def dataRegular(df, cols):
     sca = preprocessing.StandardScaler()
     df = sca.fit_transform(df)
@@ -318,8 +323,6 @@ def plotMatrix(model, X_test, y_test):
 
 # 绘制三种曲线：Roc曲线（预测性能），Learning曲线（显示训练数据的量是否足够支持模型）
 
-
-
 def plotLearning(model, X, y):
     fig, ax = plt.subplots(figsize=(6, 4))
     cv = model_selection.StratifiedKFold(12)
@@ -335,3 +338,57 @@ def plotLearning(model, X, y):
     lc_viz.fit(X, y)
     lc_viz.show()
     # fig.savefig('images/mlpr_030.png')
+
+# d 特征分析
+
+# 绘制直方图（查看某个特征的数值分布）
+def histogram(df,feature):
+    fig, ax = plt.subplots(figsize=(6, 4))
+    df[feature].plot(kind='hist', ax=ax)
+    plt.show()
+    # fig.savefig('images/mlpr_060.png', dpi=300)
+
+# e 类别特征的其他编码（除了one-hot，其他还有标签编码、频数编码、哈希编码、序数编码。。）
+
+# f 查看特征重要性（特征筛选或降维）
+# 1.使用rfecv算法进行特征筛选（递归消除不重要特征）
+def RFECV_screen(X,y):
+    fig, ax = plt.subplots(figsize=(6, 4))
+    rfe = RFECV(
+        ensemble.RandomForestClassifier(
+            n_estimators=100
+        ),
+        cv=5,
+    )
+    rfe.fit(X,y)
+    print(rfe.rfe_estimator_.ranking_)
+    print(rfe.rfe_estimator_.n_features_)
+    print(rfe.rfe_estimator_.support_)
+    rfe.show()
+    # fig.savefig('images/mlpr_083.png',dpi=300)
+
+
+# 2.使用互信息进行特征筛选（递归消除不重要特征）
+def mutlinfo_screen(X,y):
+    mic = feature_selection.mutual_info_classif(
+        X, y
+    )
+    fig, ax = plt.subplots(figsize=(10, 8))
+    (
+        pd.DataFrame(
+            {'feature': X.columns, 'vimp': mic}
+        )
+            .set_index('feature')
+            .plot.barh(ax=ax)
+    )
+    plt.show()
+    # fig.savefig('images/mlpr_084.png')
+
+# 3.使用PCA进行降维
+
+
+
+# g 类不平衡数据处理
+# 1.过采样和欠采样
+#2.使用imblanced-learn库实现
+

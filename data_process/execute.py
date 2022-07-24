@@ -15,7 +15,8 @@
 '''
 from sklearn import ensemble
 
-import data_preprocess.preprocess_utils as dp
+import preprocess_utils as dp
+import model_utils as mdu
 import pandas as pd
 import numpy as np
 
@@ -55,10 +56,40 @@ def main():
     dp.modelOpt(X_train, X_test, y_train, y_test)
     # other：绘制图表
     dp.plotMatrix(rf2,X_test,y_test)
-    dp.plotRoc(rf2,X_test,y_test)
     dp.plotLearning(rf2,X,y)
 
+def test():
+    # 获取数据
+    df = dp.getData(path)
+    # 绘制某个特征的分布
+    dp.histogram(df,'AGE')
+
+def test2():
+    # 获取数据
+    df = dp.getData(path)
+    df = dp.del_feather(df, 'ID')
+    # 划分出标签列
+    df, X, y = dp.extract_label(df, 'default payment next month')
+    # 划分训练集和测试集
+    X_train, X_test, y_train, y_test = dp.train_test(X, y, 0.3)
+    # print(X_train.columns.values)
+    # 数据集归一化
+    X_train = dp.dataRegular(X_train, X_train.columns.values)
+    X_test = dp.dataRegular(X_test, X_test.columns.values)
+
+    # 模型测试
+    mdu.logisticRegressModel(X_train,y_train,X_test,y_test,X_train)
+    mdu.GaussianNBModel(X_train,y_train,X_test,y_test,X_train)
+    mdu.SVMModel(X_train,y_train,X_test,y_test,X_train)
+    mdu.knnModel(X_train,y_train,X_test,y_test,X_train)
+    mdu.DTModel(X_train, y_train, X_test, y_test, X_train)
+    mdu.RFModel(X_train,y_train,X_test,y_test,X_train)
+    mdu.XgbModel(X_train,y_train,X_test,y_test,X_train)
+    mdu.lgbModel(X_train,y_train,X_test,y_test,X_train)
+    mdu.catboostModel(X_train,y_train,X_test,y_test,X_train)
+    mdu.TPOTModel(X_train,y_train,X_test,y_test,X_train)
 
 if __name__ == '__main__':
-    main()
-
+    # main()
+    # test()
+    test2()
