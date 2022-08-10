@@ -369,7 +369,7 @@ def RFECV_screen(X,y):
 
 
 # 2.使用互信息进行特征筛选（递归消除不重要特征）
-def mutlinfo_screen(X,y):
+def multinfo_screen(X,y):
     mic = feature_selection.mutual_info_classif(
         X, y
     )

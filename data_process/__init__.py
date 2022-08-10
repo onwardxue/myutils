@@ -4,7 +4,11 @@
 # @File : __init__.py
 # @Project : myutils
 
-
+if __name__ == '__main__':
+    x = 2
+    y = 3
+    print('x:',x,
+          'y:',y)
 
 
 

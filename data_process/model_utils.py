@@ -92,7 +92,13 @@ def logisticRegressModel(X_train, y_train, X_test, y_test, target):
     coef = lr.coef_
     # 决策函数的迭代次数
     iter = lr.n_iter_
-    print(auc_value)
+    print('auc：',auc_value,
+          '\nAccuracy',score,
+          '\npredict',p,
+          '\npredict_proba',pp,
+          '\ndecision_function',y_score,
+          '\ncoef',coef,
+          '\niter',iter)
 
     # 5.查看各特征的系数（跟预测结果正/负相关）
     cols = target.columns
@@ -113,17 +119,17 @@ def GaussianNBModel(X_train, y_train, X_test, y_test, target):
     nb.fit(X_train, y_train.values.ravel())
     score = nb.score(X_test, y_test)
     print('BYS result：')
-    print(score)
+    print('Accuracy:',score)
     # 输出预测结果
-    print(nb.predict(target))
-    print(nb.predict_proba(target))
-    print(nb.predict_log_proba(target))
+    print('predict:',nb.predict(target))
+    print('predict_proba:',nb.predict_proba(target))
+    print('predict_log_proba',nb.predict_log_proba(target))
     # 模型训练后的属性
-    print(nb.class_prior_)
-    print(nb.class_count_)
-    print(nb.theta_)
-    print(nb.var_)
-    print(nb.epsilon_)
+    print('class_prior',nb.class_prior_)
+    print('class_count',nb.class_count_)
+    print('theta',nb.theta_)
+    print('var',nb.var_)
+    print('epsilon',nb.epsilon_)
 
 
 # 3_SVM分类器
@@ -134,10 +140,10 @@ def SVMModel(X_train, y_train, X_test, y_test, target):
     # 输出预测结果
     score = svc.score(X_test, y_test)
     print('SVM result：')
-    print(score)
-    print(svc.predict(target))
-    print(svc.predict_proba(target))
-    print(svc.predict_log_proba(target))
+    print('Accuracy：',score)
+    print('predict',svc.predict(target))
+    print('predict_proba',svc.predict_proba(target))
+    print('predict_log_proba',svc.predict_log_proba(target))
 
 
 # 4_K近邻分类器
@@ -146,9 +152,9 @@ def knnModel(X_train, y_train, X_test, y_test, target):
     knc.fit(X_train, y_train.values.ravel())
     score = knc.score(X_test, y_test)
     print('KNN result：')
-    print(score)
-    print(knc.predict(target))
-    print(knc.predict_proba(target))
+    print('Accuray:',score)
+    print('predict:',knc.predict(target))
+    print('predict_proba:',knc.predict_proba(target))
 
 
 # 绘制决策树
@@ -173,9 +179,9 @@ def DTModel(X_train, y_train, X_test, y_test, target):
     dt.fit(X_train, y_train.values.ravel())
     score = dt.score(X_test, y_test)
     print('DT result：')
-    print(score)
-    print(dt.predict(target))
-    print(dt.predict_proba(target))
+    print('Accuracy:',score)
+    print('predict:',dt.predict(target))
+    print('predict_proba:',dt.predict_proba(target))
     # print(dt.predict_log_proba(X.iloc[[0]]))
     # 模型训练后的参数R
     # print(dt.classes_)
@@ -198,10 +204,10 @@ def RFModel(X_train, y_train, X_test, y_test, target):
     rf.fit(X_train, y_train.values.ravel())
     score = rf.score(X_test, y_test)
     print('RF result：')
-    print(score)
-    print(rf.predict(target))
-    print(rf.predict_proba(target))
-    print(rf.predict_log_proba(target))
+    print('Accuracy:',score)
+    print('predict:',rf.predict(target))
+    print('predict_proba:',rf.predict_proba(target))
+    print('predict_log_proba:',rf.predict_log_proba(target))
     # 特征重要性（gini划分）
     for col, val in sorted(
             zip(target.columns, rf.feature_importances_),
@@ -224,9 +230,9 @@ def XgbModel(X_train, y_train, X_test, y_test, target):
     )
     score = xgb_class.score(X_test, y_test.values.ravel())
     print('XGB result：')
-    print(score)
-    print(xgb_class.predict(target))
-    print(xgb_class.predict_proba(target))
+    print('Accuracy:',score)
+    print('predict:',xgb_class.predict(target))
+    print('predict_proba',xgb_class.predict_proba(target))
     # 输出特征重要性(根据节点的平均增益）
     for col, val in sorted(
             zip(
@@ -263,9 +269,9 @@ def lgbModel(X_train, y_train, X_test, y_test, target):
     score = lgbm_class.score(X_test, y_test)
     print('LGBM result：')
 
-    print(score)
-    print(lgbm_class.predict(target))
-    print(lgbm_class.predict_proba(target))
+    print('Accuracy:',score)
+    print('predict:',lgbm_class.predict(target))
+    print('predict_proba:',lgbm_class.predict_proba(target))
     # 输出特征重要性（这里的特征重要性默认为'splits',按一个特征的使用次数,可以设置importance_type=gain换掉）
     for col, val in sorted(
             zip(target.columns, lgbm_class.feature_importances_),
@@ -299,10 +305,10 @@ def catboostModel(train, y_train, test, y_test, target):
     clf = cb.CatBoostClassifier(eval_metric="AUC", depth=10, iterations=500, l2_leaf_reg=9, learning_rate=0.15)
     clf.fit(train, y_train)
     auc_value = auc(clf, train, y_train,test,y_test)
-    print(auc_value)
+    print('auc:',auc_value)
 
-    print(clf.predict(target))
-    print(clf.predict_proba(target))
+    print('predict:',clf.predict(target))
+    print('predict_proba:',clf.predict_proba(target))
 
     # 有专家知识挑选出重要特征时使用
     # cat_features_index = [0, 1, 2, 3, 4, 5, 6]
@@ -316,8 +322,8 @@ def TPOTModel(X_train, y_train, X_test, y_test, target):
     tc = TPOTClassifier(generations=2)
     tc.fit(X_train, y_train)
     score = tc.score(X_test, y_test)
-    print(score)
-    print(tc.predict(target))
-    print(tc.predict_proba(target))
+    print('Accuracy:',score)
+    print('predict:',tc.predict(target))
+    print('predict_proba:',tc.predict_proba(target))
     # 导出程序流水线
     # tc.export('tpot_exported_pipeline.py')

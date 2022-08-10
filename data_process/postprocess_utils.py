@@ -41,7 +41,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 
 # 混淆矩阵
-def cm(dt,X_test,y_test):
+def confusion_matrix_plot(dt,X_test,y_test):
     # 得到四个类各类的数量
     y_predict = dt.predict(X_test)
     tp = (
@@ -61,23 +61,23 @@ def cm(dt,X_test,y_test):
     metrix = pd.DataFrame(
         confusion_matrix(y_test, y_predict),
         columns=[
-            'Predict died',
-            'Predict Survive',
+            'Predict Negative',
+            'Predict Positive',
         ],
-        index=['True Death', 'True Survive'],
+        index=['True Negative', 'True Positive'],
     )
     print(metrix)
     # 用yellowbrick绘制混淆矩阵
-    mapping = {0: 'died', 1: 'survived'}
+    mapping = {0: 'Negative', 1: 'Positive'}
     fig, ax = plt.subplots(figsize=(6, 6))
     cm_viz = ConfusionMatrix(
         dt,
-        classes=['died', 'survived'],
+        classes=['Negative', 'Positive'],
         label_encorder=mapping,
     )
     cm_viz.score(X_test, y_test)
-    cm_viz.poof()
-    fig.savefig('images/mlpr_1202.png', dpi=300)
+    cm_viz.show()
+    # fig.savefig('images/mlpr_1202.png', dpi=300)
 
 
 # 分类报告
@@ -85,11 +85,11 @@ def report(dt,X_test,y_test):
     fig, ax = plt.subplots(figsize=(6, 3))
     cm_viz = ClassificationReport(
         dt,
-        classes=['died', 'survived'],
+        classes=['Negative', 'Positive'],
     )
     cm_viz.score(X_test, y_test)
-    cm_viz.poof()
-    fig.savefig('images/mlpr_1203.png')
+    cm_viz.show()
+    # fig.savefig('images/mlpr_1203.png')
 
 
 # 绘制roc曲线
@@ -97,8 +97,8 @@ def rocCurve(dt,X_test,y_test):
     fig, ax = plt.subplots(figsize=(6, 6))
     roc_viz = ROCAUC(dt)
     roc_viz.score(X_test, y_test)
-    roc_viz.poof()
-    fig.savefig('images/mlpr_1204.png', dpi=300)
+    roc_viz.show()
+    # fig.savefig('images/mlpr_1204.png', dpi=300)
 
 
 # 绘制精确率-召回率曲线
@@ -109,8 +109,8 @@ def apCurve(X_train,y_train,X_test,y_test):
     )
     viz.fit(X_train, y_train)
     print(viz.score(X_test, y_test))
-    viz.poof()
-    fig.savefig('images/mlpr_1205.png', dpi=300)
+    viz.show()
+    # fig.savefig('images/mlpr_1205.png', dpi=300)
 
 
 # 绘制累积增益图
@@ -134,14 +134,14 @@ def apCurve(X_train,y_train,X_test,y_test):
 
 
 # 绘制柱形图查看各类数量
-def cbPlot():
+def cbPlot(y_test):
     fig, ax = plt.subplots(figsize=(6, 6))
     cb_viz = ClassBalance(
-        labels=['Died', 'Survived']
+        labels=['Negative', 'Positive']
     )
     cb_viz.fit(y_test)
-    cb_viz.poof()
-    fig.savefig('images/mlpr_1208.png', dpi=300)
+    cb_viz.show()
+    # fig.savefig('images/mlpr_1208.png', dpi=300)
 
 
 # 类别预测错误图
