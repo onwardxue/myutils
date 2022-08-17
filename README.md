@@ -41,6 +41,8 @@
     -10- lgbModel(lightgbm分类器)
     -11- catboostModel(catboost分类器)
     -12- TPOTModel(TPOT分类器)？有问题
+    ...(还可加集成学习几种方法-voting/bagging/adaboost
+        /gdbt(gradiantboostingclassifier/histgradient..))
 
   (4)PCA_utils.py(PCA降维工具)
     -1- pcaTest(PCA降维测试，主)

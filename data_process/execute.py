@@ -22,7 +22,7 @@ import preprocess_utils as dp
 import model_utils as mdu
 import PCA_utils as pu
 import Explaining_utils as eu
-
+import postprocess_utils as ppu
 
 path = '../data_set/credit_card_clients/default of credit card clients.csv'
 # 0_数据预处理
@@ -35,6 +35,7 @@ def data_pp():
     df = dp.del_feather(df, 'ID')
     # 划分出标签列
     df, X, y = dp.extract_label(df, 'default payment next month')
+    print('y',y)
     # 划分训练集和测试集
     X_train, X_test, y_train, y_test = dp.train_test(X, y, 0.3)
     # print(X_train.columns.values)
@@ -105,7 +106,7 @@ def pca_experiment():
 
 
 # 6_Explaining_utils测试
-def ExplainingTest():
+def explaining_test():
     # 测试树模型（使用的是随机森林，也可以用其他的实验）的解释方法
     X_train,y_train,X_test,y_test = data_pp()
     # rf = RandomForestClassifier(random_state=42)
@@ -124,7 +125,23 @@ def ExplainingTest():
     )
     eu.shapTest(rf,X_train,y_train,X_test)
 
-    
+
+# 后处理方法测试
+def post_test():
+    rf = RandomForestClassifier(
+        **{
+            'min_samples_leaf': 0.1,
+            'n_estimators': 200,
+            'random_state': 42,
+        }
+    )
+    X_train,y_train,X_test,y_test = data_pp()
+    print('x_test:\n',X_test)
+    print('y_test:\n',y_test)
+    rf1 = rf.fit(X_train,y_train)
+    # 1_测试混淆矩阵
+    # ppu.confusion_matrix_plot(rf1,X_test,y_test.values.ravel())
+    ppu.report(rf,X_test,y_test)
 
 # 主要方法
 def main():
@@ -136,9 +153,10 @@ def main():
     # model_test()
     # 4_pca降维测试
     # pca_experiment()
-    # 5_
+    # 5_postprocessing_utils测试
+    post_test()
     # 6_Explaining_utils测试
-    ExplainingTest()
+    # explaining_test()
 
 
 if __name__ == '__main__':

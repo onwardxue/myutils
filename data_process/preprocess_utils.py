@@ -129,6 +129,8 @@ def extract_label(df, label):
 # 6_划分数据集为训练集和测试集
 def train_test(X, y, test_size):
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=test_size, random_state=42)
+    y_test = y_test.reset_index(drop=True)
+    y_train = y_train.reset_index(drop=True)
     return X_train, X_test, y_train, y_test
 
 
