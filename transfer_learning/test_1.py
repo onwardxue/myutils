@@ -16,9 +16,12 @@ Deep-learning-based DAN [16], DCORAL [17], MRAN [18], DANN [19][20]
 '''
 import os
 import pandas as pd
+from sklearn import preprocessing
+from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 import numpy as np
 import Toolkit.traditional.instance.TrAdaBoost as tab
+from sklearn.impute import SimpleImputer     #引入skleran的数据填充方法；
 
 p = os.path.dirname(os.getcwd())
 after_path = p + '/data_set/loans/data_after/'
@@ -73,8 +76,22 @@ train_A_flag = train_A_1['flag']
 train_A_1.drop('no', axis=1, inplace=True)
 train_A_1.drop('flag', axis=1, inplace=True)
 
+# 缺失值处理（对决策树影响较大）
+imputer = SimpleImputer(missing_values = np.nan, strategy = 'mean')#利用均值填充数据集；
+imputer2 = SimpleImputer(missing_values = np.nan, strategy = 'mean')#利用均值填充数据集；
+train_A_1=pd.DataFrame(imputer.fit_transform(train_A_1))
+train_B_1=pd.DataFrame(imputer.fit_transform(train_B_1))
+
+
 print(train_A_1.isnull().sum())
 print(train_B_1.isnull().sum())
+
+# 归一化
+sca = preprocessing.StandardScaler()
+df = sca.fit_transform(train_A_1)
+train_A_1 = pd.DataFrame(df)
+df = sca.fit_transform(train_B_1)
+train_B_1 = pd.DataFrame(df)
 
 # 5.设置可以复现的随机种子 ?问题：这一步有什么用？
 def seed_everything(seed=0):
@@ -95,4 +112,4 @@ tb= tab.TrAdaBoost()
 # prediction = tb.fit_predict(train_A_1,train_B_1,train_A_flag,train_B_flag,test_B)
 prediction = tb.fit_predict(train_A_1.values, train_B_1_valid.values, train_A_flag, train_B_1_valid_y.values,train_B_1_test)
 print(prediction)
-
+print('auc：',roc_auc_score(train_B_1_test_y,prediction))
